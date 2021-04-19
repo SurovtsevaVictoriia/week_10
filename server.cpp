@@ -4,19 +4,21 @@
 
 
 std::string read_(boost::asio::ip::tcp::socket& socket) {
-	std::cout << "in read_\n";
-	boost::asio::streambuf buf;
-	std::cout << "created buffer\n";
-	buf.prepare(1000000);
-	std::cout << "redserved space\n";
-	boost::asio::read_until(socket, buf , '\n');
-	//socket.receive(buf);
-	std::cout << "socket read\n";
-	std::string data = boost::asio::buffer_cast<const char*>(buf.data());
-	return data;
+	/*boost::asio::streambuf buffer;
+	boost::asio::read_until(socket, buffer, '!');
+	std::string message;
+	std::istream input_stream(&buffer);
+	std::getline(input_stream, message, '\n');
+	return message;*/
+
+
+	const std::size_t length = 10;
+	char buffer[length];
+	boost::asio::read(socket, boost::asio::buffer(buffer, length));
+	return std::string(buffer, length);
 }
 void send_(boost::asio::ip::tcp::socket& socket, const std::string& message) {
-	const std::string msg = message + "\n";
+	const std::string msg = message;
 	boost::asio::write(socket, boost::asio::buffer(message));
 }
 
@@ -41,21 +43,26 @@ int main(int argc, char** argv)
 	//--------------------------------------------------------------------------
 	try
 	{	
-		ip::tcp::acceptor acceptor_(io_service_, endpoint_);
+		ip::tcp::acceptor receive_acceptor(io_service_, endpoint_);
 		std::cout << "acceptor created\n";
-		ip::tcp::socket socket_(io_service_/*, protocol_*/);
+		ip::tcp::socket recieve_socket(io_service_/*, protocol_*/);
 		std::cout << "socket created\n";
 
 	//--------------------------------------------------------------------------
-		acceptor_.accept(socket_);
+		receive_acceptor.accept(recieve_socket);
 		std::cout << "Socket ready" << std::endl;
-	//--------------------------------------------------------------------------
 		std::cout << "reading\n";
-		std::string message = read_(socket_);
+		std::string message = read_(recieve_socket);
 		std::cout << message << std::endl;
 
-		send_(socket_, "Hello From Server!");
-		std::cout << "Servent sent Hello message to Client!" << std::endl;
+		//--------------------------------------------------------------------------
+		ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
+		std::cout << " send_acceptor created\n";
+		ip::tcp::socket send_socket(io_service_/*, protocol_*/);
+		std::cout << " send_socket created\n";
+		send_acceptor.accept(send_socket);
+		send_(send_socket, "Hello From Server!");
+		std::cout << "Server sent Hello message to Client!" << std::endl;
 
 	}
 	catch (boost::system::system_error& e)
