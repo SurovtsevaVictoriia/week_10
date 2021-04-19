@@ -3,7 +3,7 @@
 #include <boost/asio.hpp>
 void write_data(boost::asio::ip::tcp::socket& socket)
 {
-	std::string data = "Hello World!";
+	std::string data = "Hello from client!";
 	boost::system::error_code error;
 	boost::asio::write(socket, boost::asio::buffer(data), error);
 
@@ -13,9 +13,12 @@ void write_data(boost::asio::ip::tcp::socket& socket)
 	else {
 		std::cout << "send failed: " << error.message() << std::endl;
 	}
+
 }
 
-void receive_data(boost::asio::ip::tcp::socket& socket, boost::asio::streambuf receive_buffer) {
+void receive_data(boost::asio::ip::tcp::socket& socket) {
+
+	boost::asio::streambuf receive_buffer;
 	boost::system::error_code error;
 
 	boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
@@ -26,6 +29,8 @@ void receive_data(boost::asio::ip::tcp::socket& socket, boost::asio::streambuf r
 		const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
 		std::cout << "recieved data:"<< data << std::endl;
 	}
+
+	socket.close();
 
 }
 
@@ -57,14 +62,18 @@ int main(int argc, char** argv)
 		std::cout << "Endpoint ready" << std::endl;
 
 		boost::asio::io_service io_service;
-		boost::asio::ip::tcp::socket socket(io_service, endpoint.protocol());
-		std::cout << "socket created\n";
-		socket.connect(endpoint);
-		std::cout << "socket connected" << std::endl;
-		//--------------------------------------------------------------------------
-		write_data(socket);
-		//--------------------------------------------------------------------------
-
+		boost::asio::ip::tcp::socket send_socket(io_service, endpoint.protocol());
+		std::cout << "send_socket created\n";
+		send_socket.connect(endpoint);
+		std::cout << "send_socket connected" << std::endl;
+//--------------------------------------------------------------------------
+		write_data(send_socket);
+//--------------------------------------------------------------------------
+		boost::asio::ip::tcp::socket recieve_socket(io_service, endpoint.protocol());
+		std::cout << "receive_socket created\n";
+		recieve_socket.connect(endpoint);
+		std::cout << "receive_socket connected" << std::endl;
+		receive_data(recieve_socket);
 
 
 	}
