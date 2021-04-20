@@ -18,8 +18,21 @@ std::string read_(boost::asio::ip::tcp::socket& socket) {
 	return std::string(buffer, length);
 }
 void send_(boost::asio::ip::tcp::socket& socket, const std::string& message) {
-	const std::string msg = message;
-	boost::asio::write(socket, boost::asio::buffer(message));
+	std::cout << " in send_\n";
+	//boost::asio::write(socket, boost::asio::buffer(message));
+	
+
+	boost::system::error_code error;
+	boost::asio::write(socket, boost::asio::buffer(message), error);
+	system("pause");
+
+	if (!error) {
+		std::cout << "Client received hello message!\n" << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+	}
+
 }
 
 int main(int argc, char** argv)
@@ -43,25 +56,28 @@ int main(int argc, char** argv)
 	//--------------------------------------------------------------------------
 	try
 	{	
+		//-------receive-------------------------------------------------------------------
 		ip::tcp::acceptor receive_acceptor(io_service_, endpoint_);
 		std::cout << "acceptor created\n";
 		ip::tcp::socket recieve_socket(io_service_/*, protocol_*/);
 		std::cout << "socket created\n";
 
-	//--------------------------------------------------------------------------
+	
 		receive_acceptor.accept(recieve_socket);
 		std::cout << "Socket ready" << std::endl;
 		std::cout << "reading\n";
 		std::string message = read_(recieve_socket);
 		std::cout << message << std::endl;
 
-		//--------------------------------------------------------------------------
-		ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
-		std::cout << " send_acceptor created\n";
-		ip::tcp::socket send_socket(io_service_/*, protocol_*/);
-		std::cout << " send_socket created\n";
-		send_acceptor.accept(send_socket);
-		send_(send_socket, "Hello From Server!");
+		//---------send-----------------------------------------------------------------
+		
+		//ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
+		//std::cout << " send_acceptor created\n";
+		//ip::tcp::socket send_socket(io_service_/*, protocol_*/);
+		//std::cout << " send_socket created\n";
+		////send_acceptor.accept(send_socket);
+		//send_(send_socket, "Hello From Server!");
+		send_(recieve_socket, "Hello From Server!");
 		std::cout << "Server sent Hello message to Client!" << std::endl;
 
 	}
@@ -75,7 +91,7 @@ int main(int argc, char** argv)
 
 	
 
-	system("pause");
+	//system("pause");
 
 	return EXIT_SUCCESS;
 }
