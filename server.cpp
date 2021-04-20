@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <string>
 #include <boost/asio.hpp>
 
 
@@ -21,10 +21,10 @@ void send_(boost::asio::ip::tcp::socket& socket, const std::string& message) {
 	std::cout << " in send_\n";
 	//boost::asio::write(socket, boost::asio::buffer(message));
 	
-
+	std::string data = "Hello from server!";
 	boost::system::error_code error;
-	boost::asio::write(socket, boost::asio::buffer(message), error);
-	system("pause");
+	boost::asio::write(socket, boost::asio::buffer(data), error);
+	
 
 	if (!error) {
 		std::cout << "Client received hello message!\n" << std::endl;
@@ -32,6 +32,7 @@ void send_(boost::asio::ip::tcp::socket& socket, const std::string& message) {
 	else {
 		std::cout << "send failed: " << error.message() << std::endl;
 	}
+	system("pause");
 
 }
 
@@ -71,11 +72,13 @@ int main(int argc, char** argv)
 
 		//---------send-----------------------------------------------------------------
 		
-		//ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
-		//std::cout << " send_acceptor created\n";
-		//ip::tcp::socket send_socket(io_service_/*, protocol_*/);
-		//std::cout << " send_socket created\n";
-		////send_acceptor.accept(send_socket);
+		//io_service io_service_2;
+
+		ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
+		std::cout << " send_acceptor created\n";
+		ip::tcp::socket send_socket(io_service_/*, protocol_*/);
+		std::cout << " send_socket created\n";
+		//send_acceptor.accept(send_socket);
 		//send_(send_socket, "Hello From Server!");
 		send_(recieve_socket, "Hello From Server!");
 		std::cout << "Server sent Hello message to Client!" << std::endl;
