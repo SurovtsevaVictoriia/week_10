@@ -1,48 +1,52 @@
 #include <iostream>
 #include <string>
 #include <boost/asio.hpp>
-void write_data(boost::asio::ip::tcp::socket& socket)
-{
-	std::string data = "Hello from client!";
+#include <thread>
+
+void print(std::string text) {
+	std::cout << "-------------------------------\n"<<
+				"message from server:\n" << 
+				 text << 
+				"\n-------------------------------\n";
+}
+
+void long_write_data(boost::asio::ip::tcp::socket& socket){	
+	std::cout << "write_thread started\n";
+	std::string text;
 	boost::system::error_code error;
-	boost::asio::write(socket, boost::asio::buffer(data), error);
+	while (std::getline(std::cin, text) && (text != "cancel")) {
+		boost::asio::write(socket, boost::asio::buffer(text), error);
+
+		if (!error) {
+			std::cout << "Client sent message:\t" << text << std::endl;
+		}
+		else {
+			std::cout << "send failed: " << error.message() << std::endl;
+			return;
+		}
+	}
+}
+
+void long_receive_data(boost::asio::ip::tcp::socket& socket) {
+
+	std::cout << "read_thread started\n";
+
+	boost::asio::streambuf buffer;
+	boost::system::error_code error;
+	boost::asio::read_until(socket, buffer, '\n', error);
 
 	if (!error) {
-		std::cout << "Client sent hello message!\n" << std::endl;
+		std::string message;
+		std::istream input_stream(&buffer);
+		std::getline(input_stream, message, '\n');
+		print(message);
 	}
 	else {
 		std::cout << "send failed: " << error.message() << std::endl;
+		return;
 	}
-
+	
 }
-
-std::string receive_data(boost::asio::ip::tcp::socket& socket) {
-
-	std::cout << "in receive_data\n";
-
-	const std::size_t length = 10;
-	char buffer[length];
-
-	boost::asio::streambuf receive_buffer;
-	boost::system::error_code error;
-
-	//boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
-	boost::asio::read(socket, boost::asio::buffer(buffer, length), error);
-
-	if (error && error != boost::asio::error::eof) {
-		std::cout << "receive failed: " << error.message() << std::endl;
-	}
-	else {
-		//const char* data = boost::asio::buffer_cast<const char*>(receive_buffer.data());
-		//std::cout << "recieved data:"<< data << std::endl;
-		return std::string(buffer, length);
-	}
-
-	//socket.close();
-
-}
-
-
 
 int main(int argc, char** argv)
 
@@ -71,27 +75,24 @@ int main(int argc, char** argv)
 
 		boost::asio::io_service io_service_;
 		boost::asio::ip::tcp::socket send_socket(io_service_, endpoint.protocol());
-		std::cout << "send_socket created\n";
 		send_socket.connect(endpoint);
-		std::cout << "send_socket connected" << std::endl;
-//--------------------------------------------------------------------------
-		write_data(send_socket);
-//--------------------------------------------------------------------------
-		//boost::asio::io_service io_service_2;
-
 		boost::asio::ip::tcp::socket recieve_socket(io_service_, endpoint.protocol());
-		std::cout << "receive_socket created\n";
 		recieve_socket.connect(endpoint);
-		std::cout << "receive_socket connected" << std::endl;
-		//receive_data(recieve_socket);
-		std::cout << receive_data(send_socket);
-		std::cout << "tjis was received data\n";
+
+		std::cout << "soccets connected\n";
+//--------------------------------------------------------------------------
+		
+		std::thread read_tread(long_receive_data, std::ref(recieve_socket));
+		std::thread write_thread(long_write_data, std::ref(send_socket));
+
+		read_tread.join();
+		write_thread.join();
+
 
 	}
 	catch (boost::system::system_error& e)
 	{
 		std::cout << "Error occured! Error code = " << e.code() << ". Message: " << e.what() << std::endl;
-		//system("pause");
 		return e.code().value();
 	}
 
