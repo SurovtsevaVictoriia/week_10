@@ -4,9 +4,21 @@
 
 void print(std::string text) {
 	std::cout << "-------------------------------\n" <<
-		"message from client:\n" <<
-		text <<
+		"|                              |\n" <<
+		"|   message from client:       |\n" <<
+		"|   " << text << "\n"<<
+		"|                              |" <<
 		"\n-------------------------------\n";
+
+	std::cout << "\n"
+		<< "|\n"
+		<< "|\n"
+		<< "^____^\n"
+		<< "( O O )\__________________\n"
+		<< "(_____)\                  )---<\n"
+		<< "       (                  )\n"
+		<< "       ||_ _ _ _ _ _ _  W |\n"
+		<< "       ||                ||\n";
 }
 
 void long_write_data(boost::asio::ip::tcp::socket& socket) {
