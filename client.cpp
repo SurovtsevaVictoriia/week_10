@@ -15,6 +15,7 @@ void long_write_data(boost::asio::ip::tcp::socket& socket){
 	std::string text;
 	boost::system::error_code error;
 	while (std::getline(std::cin, text) && (text != "cancel")) {
+		text += '\n';
 		boost::asio::write(socket, boost::asio::buffer(text), error);
 
 		if (!error) {
@@ -33,17 +34,20 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 
 	boost::asio::streambuf buffer;
 	boost::system::error_code error;
-	boost::asio::read_until(socket, buffer, '\n', error);
 
-	if (!error) {
-		std::string message;
-		std::istream input_stream(&buffer);
-		std::getline(input_stream, message, '\n');
-		print(message);
-	}
-	else {
-		std::cout << "send failed: " << error.message() << std::endl;
-		return;
+	while (true) {
+		boost::asio::read_until(socket, buffer, '\n', error);
+
+		if (!error) {
+			std::string message;
+			std::istream input_stream(&buffer);
+			std::getline(input_stream, message, '\n');
+			print(message);
+		}
+		else {
+			std::cout << "send failed: " << error.message() << std::endl;
+			return;
+		}
 	}
 	
 }
@@ -70,20 +74,24 @@ int main(int argc, char** argv)
 
 	try
 	{
-		boost::asio::ip::tcp::endpoint endpoint(ip_address, port);
+		boost::asio::ip::tcp::endpoint endpoint_1(ip_address, port);
+		boost::asio::ip::tcp::endpoint endpoint_2(ip_address, 9999);
+
+
 		std::cout << "Endpoint ready" << std::endl;
 
 		boost::asio::io_service io_service_;
-		boost::asio::ip::tcp::socket send_socket(io_service_, endpoint.protocol());
-		send_socket.connect(endpoint);
-		boost::asio::ip::tcp::socket recieve_socket(io_service_, endpoint.protocol());
-		recieve_socket.connect(endpoint);
+		boost::asio::ip::tcp::socket send_socket(io_service_, endpoint_1.protocol());
+		send_socket.connect(endpoint_1);
+		std::cout << "send socket connected\n";
+		boost::asio::ip::tcp::socket recieve_socket(io_service_, endpoint_2.protocol());
+		recieve_socket.connect(endpoint_2);
 
-		std::cout << "soccets connected\n";
+		std::cout << "receive soccet connected\n";
 //--------------------------------------------------------------------------
-		
-		std::thread read_tread(long_receive_data, std::ref(recieve_socket));
+
 		std::thread write_thread(long_write_data, std::ref(send_socket));
+		std::thread read_tread(long_receive_data, std::ref(recieve_socket));		
 
 		read_tread.join();
 		write_thread.join();
