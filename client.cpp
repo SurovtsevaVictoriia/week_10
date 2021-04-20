@@ -18,10 +18,16 @@ void write_data(boost::asio::ip::tcp::socket& socket)
 
 void receive_data(boost::asio::ip::tcp::socket& socket) {
 
+	std::cout << "in receive_data\n";
+
+	const std::size_t length = 10;
+	char buffer[length];
+
 	boost::asio::streambuf receive_buffer;
 	boost::system::error_code error;
 
-	boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
+	//boost::asio::read(socket, receive_buffer, boost::asio::transfer_all(), error);
+	boost::asio::read(socket, boost::asio::buffer(buffer, length), error);
 	if (error && error != boost::asio::error::eof) {
 		std::cout << "receive failed: " << error.message() << std::endl;
 	}
@@ -30,7 +36,7 @@ void receive_data(boost::asio::ip::tcp::socket& socket) {
 		std::cout << "recieved data:"<< data << std::endl;
 	}
 
-	socket.close();
+	//socket.close();
 
 }
 
@@ -69,24 +75,26 @@ int main(int argc, char** argv)
 //--------------------------------------------------------------------------
 		write_data(send_socket);
 //--------------------------------------------------------------------------
-		boost::asio::ip::tcp::socket recieve_socket(io_service, endpoint.protocol());
+
+		/*boost::asio::ip::tcp::socket recieve_socket(io_service, endpoint.protocol());
 		std::cout << "receive_socket created\n";
 		recieve_socket.connect(endpoint);
 		std::cout << "receive_socket connected" << std::endl;
-		receive_data(recieve_socket);
+		receive_data(recieve_socket);*/
+		receive_data(send_socket);
 
 
 	}
 	catch (boost::system::system_error& e)
 	{
 		std::cout << "Error occured! Error code = " << e.code() << ". Message: " << e.what() << std::endl;
-		system("pause");
+		//system("pause");
 		return e.code().value();
 	}
 
 
 
-	system("pause");
+	//system("pause");
 
 	return EXIT_SUCCESS;
 }
