@@ -2,39 +2,66 @@
 #include <string>
 #include <boost/asio.hpp>
 
-
-std::string read_(boost::asio::ip::tcp::socket& socket) {
-	/*boost::asio::streambuf buffer;
-	boost::asio::read_until(socket, buffer, '!');
-	std::string message;
-	std::istream input_stream(&buffer);
-	std::getline(input_stream, message, '\n');
-	return message;*/
-
-
-	const std::size_t length = 10;
-	char buffer[length];
-	boost::asio::read(socket, boost::asio::buffer(buffer, length));
-	return std::string(buffer, length);
+void print(std::string text) {
+	std::cout << "-------------------------------\n" <<
+		"message from client:\n" <<
+		text <<
+		"\n-------------------------------\n";
 }
-void send_(boost::asio::ip::tcp::socket& socket, const std::string& message) {
-	std::cout << " in send_\n";
-	//boost::asio::write(socket, boost::asio::buffer(message));
-	
-	std::string data = "Hello from server!";
+
+void long_write_data(boost::asio::ip::tcp::socket& socket
+						/*boost::asio::io_service & io_service_,
+						boost::asio::ip::tcp::endpoint endpoint_*/) {
+	std::cout << "write_thread started\n";
+	/*boost::asio::ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
+	boost::asio::ip::tcp::socket send_socket(io_service_);
+	send_acceptor.accept(send_socket);*/
+
+
+
+	std::string text;
 	boost::system::error_code error;
-	boost::asio::write(socket, boost::asio::buffer(data), error);
-	
+	while (std::getline(std::cin, text) && (text != "cancel")) {
+		std::cout << "server sent text: " << text << '\n';
+		boost::asio::write(socket, boost::asio::buffer(text), error);
+
+		if (!error) {
+			std::cout << "Server sent message:\t" << text << std::endl;
+		}
+		else {
+			std::cout << "send failed: " << error.message() << std::endl;
+		}
+	}
+}
+
+void long_receive_data(boost::asio::ip::tcp::socket& socket
+	/*boost::asio::io_service& io_service_, 
+	boost::asio::ip::tcp::endpoint endpoint_*/) {
+
+
+	std::cout << "read_thread started\n";
+
+	/*boost::asio::ip::tcp::acceptor receive_acceptor(io_service_, endpoint_);
+	boost::asio::ip::tcp::socket recieve_socket(io_service_);
+	receive_acceptor.accept(recieve_socket);
+	std::cout << "receive soccet accepted\n";*/
+
+	boost::asio::streambuf buffer;
+	boost::system::error_code error;
+	boost::asio::read_until(socket, buffer, '\n', error);
 
 	if (!error) {
-		std::cout << "Client received hello message!\n" << std::endl;
+		std::string message;
+		std::istream input_stream(&buffer);
+		std::getline(input_stream, message, '\n');
+		print(message);
 	}
 	else {
 		std::cout << "send failed: " << error.message() << std::endl;
 	}
-	system("pause");
-
+	return;
 }
+
 
 int main(int argc, char** argv)
 {
@@ -57,31 +84,28 @@ int main(int argc, char** argv)
 	//--------------------------------------------------------------------------
 	try
 	{	
-		//-------receive-------------------------------------------------------------------
+		//--------------------------------------------------------------------------
 		ip::tcp::acceptor receive_acceptor(io_service_, endpoint_);
-		std::cout << "acceptor created\n";
-		ip::tcp::socket recieve_socket(io_service_/*, protocol_*/);
-		std::cout << "socket created\n";
-
-	
+		//receive_acceptor.bind(endpoint_);
+		//receive_acceptor.listen();
+		ip::tcp::socket recieve_socket(io_service_);
 		receive_acceptor.accept(recieve_socket);
-		std::cout << "Socket ready" << std::endl;
-		std::cout << "reading\n";
-		std::string message = read_(recieve_socket);
-		std::cout << message << std::endl;
+		std::cout << "receive soccet accepted\n";
 
-		//---------send-----------------------------------------------------------------
+		//ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
+		//ip::tcp::socket send_socket(io_service_);
+		////send_acceptor.accept(send_socket);
+
+		std::cout << "soccets accepted\n";
+		//--------------------------------------------------------------------------
+
+		std::thread read_tread(long_receive_data, std::ref(recieve_socket)/*, std::ref(io_service_), std::ref(endpoint_)*/);
+		//std::thread write_thread(long_write_data, std::ref(send_socket)/*, std::ref(io_service_), std::ref(endpoint_)*/);
+
+		read_tread.join();
+		//write_thread.join();
+
 		
-		//io_service io_service_2;
-
-		ip::tcp::acceptor send_acceptor(io_service_, endpoint_);
-		std::cout << " send_acceptor created\n";
-		ip::tcp::socket send_socket(io_service_/*, protocol_*/);
-		std::cout << " send_socket created\n";
-		//send_acceptor.accept(send_socket);
-		//send_(send_socket, "Hello From Server!");
-		send_(recieve_socket, "Hello From Server!");
-		std::cout << "Server sent Hello message to Client!" << std::endl;
 
 	}
 	catch (boost::system::system_error& e)
