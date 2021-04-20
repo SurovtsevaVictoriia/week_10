@@ -55,9 +55,14 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 int main(int argc, char** argv)
 
 {
+	
+	std::cout << "enter server ip: \n";
+	std::string raw_ip_address;
+	std::cin>>raw_ip_address;
+	
 //--------------------------------------------------------------------------
 	system("chcp 1251");
-	std::string raw_ip_address = "127.0.0.1";
+	
 	auto port = 3333;
 	boost::system::error_code error_code;
 	boost::asio::ip::address ip_address =
