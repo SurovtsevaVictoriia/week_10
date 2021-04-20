@@ -54,7 +54,6 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 	return;
 }
 
-
 int main(int argc, char** argv)
 {
 	system("chcp 1251");
@@ -68,8 +67,8 @@ int main(int argc, char** argv)
 	
 	boost::system::error_code error_code;
 	ip::address ip_address =ip::address::from_string(raw_ip_address, error_code);
-	ip::tcp::endpoint endpoint_1(ip_address, port);
-	ip::tcp::endpoint endpoint_2(ip_address, 9999);
+	ip::tcp::endpoint endpoint_1(boost::asio::ip::tcp::v4(), port);
+	ip::tcp::endpoint endpoint_2(boost::asio::ip::tcp::v4(), 9999);
 	std::cout << "Endpoint ready" << std::endl;
 
 	io_service io_service_;
