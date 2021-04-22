@@ -3,12 +3,13 @@
 #include <boost/asio.hpp>
 #include <thread>
 
-void print(std::string text) {
+void print(std::string text, std::string name) {
 	std::cout << "-------------------------------\n" <<
-		"message from server:\n" <<
+		"message from " << name << ":\n" <<
 		text <<
 		"\n-------------------------------\n";
 }
+
 
 void long_write_data(boost::asio::ip::tcp::socket& socket) {
 
@@ -20,7 +21,7 @@ void long_write_data(boost::asio::ip::tcp::socket& socket) {
 	
 	boost::system::error_code error;
 
-	boost::asio::write(socket, boost::asio::buffer(client_name +'\n'), error);
+	boost::asio::write(socket, boost::asio::buffer(client_name /*+'\n'*/), error);
 	if (!error) {
 		std::cout << client_name << "send their name to server\t"  << std::endl;
 	}
@@ -52,6 +53,22 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 	boost::asio::streambuf buffer;
 	boost::system::error_code error;
 
+	boost::asio::read_until(socket, buffer, '\n', error);
+	std::string server_name;
+
+	if (!error) {
+
+		std::istream input_stream(&buffer);
+		std::getline(input_stream, server_name, '\n');
+		std::cout << "server name is " << server_name << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
+
+
 	while (true) {
 		boost::asio::read_until(socket, buffer, '\n', error);
 
@@ -59,7 +76,7 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 			std::string message;
 			std::istream input_stream(&buffer);
 			std::getline(input_stream, message, '\n');
-			print(message);
+			print(message, server_name);
 		}
 		else {
 			std::cout << "send failed: " << error.message() << std::endl;
