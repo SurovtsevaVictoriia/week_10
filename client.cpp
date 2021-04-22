@@ -4,22 +4,39 @@
 #include <thread>
 
 void print(std::string text) {
-	std::cout << "-------------------------------\n"<<
-				"message from server:\n" << 
-				 text << 
-				"\n-------------------------------\n";
+	std::cout << "-------------------------------\n" <<
+		"message from server:\n" <<
+		text <<
+		"\n-------------------------------\n";
 }
 
-void long_write_data(boost::asio::ip::tcp::socket& socket){	
+void long_write_data(boost::asio::ip::tcp::socket& socket) {
+
 	std::cout << "write_thread started\n";
-	std::string text;
+
+	std::string client_name;
+	std::cout << "enter client name\n";
+	std::cin >> client_name;
+	
 	boost::system::error_code error;
+
+	boost::asio::write(socket, boost::asio::buffer(client_name +'\n'), error);
+	if (!error) {
+		std::cout << client_name << "send their name to server\t"  << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
+	std::string text;
+	
 	while (std::getline(std::cin, text) && (text != "cancel")) {
 		text += '\n';
 		boost::asio::write(socket, boost::asio::buffer(text), error);
 
 		if (!error) {
-			std::cout << "Client sent message:\t" << text << std::endl;
+			std::cout << client_name << " sent message:\t" << text << std::endl;
 		}
 		else {
 			std::cout << "send failed: " << error.message() << std::endl;
@@ -49,13 +66,13 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 			return;
 		}
 	}
-	
+
 }
 
 int main(int argc, char** argv)
 
 {
-//--------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 	system("chcp 1251");
 	std::string raw_ip_address = "127.0.0.1";
 	auto port = 3333;
@@ -70,7 +87,7 @@ int main(int argc, char** argv)
 
 		return error_code.value();
 	}
-//--------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
 
 	try
 	{
@@ -88,10 +105,10 @@ int main(int argc, char** argv)
 		recieve_socket.connect(endpoint_2);
 
 		std::cout << "receive soccet connected\n";
-//--------------------------------------------------------------------------
+		//--------------------------------------------------------------------------
 
 		std::thread write_thread(long_write_data, std::ref(send_socket));
-		std::thread read_tread(long_receive_data, std::ref(recieve_socket));		
+		std::thread read_tread(long_receive_data, std::ref(recieve_socket));
 
 		read_tread.join();
 		write_thread.join();
