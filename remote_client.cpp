@@ -3,35 +3,52 @@
 #include <boost/asio.hpp>
 #include <thread>
 
-void print(std::string text) {
-	std::cout << "-------------------------------\n" 
-		         "|   message from server:       |\n" <<
-		         "|   "      << text << "\n"<<
-		         "|                              |" <<
-		        "\n-------------------------------\n";
+void print(std::string text, std::string name) {
+	std::cout << "-------------------------------\n" <<
+		"|                              |\n" <<
+		"|   message from " << name << "\n" <<
+		"|   " << text << "\n" <<
+		"|                              |" <<
+		"\n-------------------------------\n";
+
 	std::cout << "\n"
 		<< "|\n"
 		<< "|\n"
-		<< "^ ____^\n"
+		<< "^____^\n"
 		<< "( O O )\__________________\n"
 		<< "(_____)\                  )---<\n"
 		<< "       (                  )\n"
 		<< "       ||_ _ _ _ _ _ _  W |\n"
 		<< "       ||                ||\n";
-
-
 }
 
 void long_write_data(boost::asio::ip::tcp::socket& socket) {
+
 	std::cout << "write_thread started\n";
-	std::string text;
+
+	std::string client_name;
+	std::cout << "enter client name\n";
+	std::cin >> client_name;
+
 	boost::system::error_code error;
+
+	boost::asio::write(socket, boost::asio::buffer(client_name /*+'\n'*/), error);
+	if (!error) {
+		std::cout << client_name << "send their name to server\t" << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
+	std::string text;
+
 	while (std::getline(std::cin, text) && (text != "cancel")) {
 		text += '\n';
 		boost::asio::write(socket, boost::asio::buffer(text), error);
 
 		if (!error) {
-			std::cout << "Client sent message:\t" << text << std::endl;
+			std::cout << client_name << " sent message:\t" << text << std::endl;
 		}
 		else {
 			std::cout << "send failed: " << error.message() << std::endl;
@@ -47,6 +64,22 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 	boost::asio::streambuf buffer;
 	boost::system::error_code error;
 
+	boost::asio::read_until(socket, buffer, '\n', error);
+	std::string server_name;
+
+	if (!error) {
+
+		std::istream input_stream(&buffer);
+		std::getline(input_stream, server_name, '\n');
+		std::cout << "server name is " << server_name << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
+
+
 	while (true) {
 		boost::asio::read_until(socket, buffer, '\n', error);
 
@@ -54,7 +87,7 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 			std::string message;
 			std::istream input_stream(&buffer);
 			std::getline(input_stream, message, '\n');
-			print(message);
+			print(message, server_name);
 		}
 		else {
 			std::cout << "send failed: " << error.message() << std::endl;
