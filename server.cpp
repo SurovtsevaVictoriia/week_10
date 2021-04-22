@@ -12,8 +12,23 @@ void print(std::string text, std::string name) {
 void long_write_data(boost::asio::ip::tcp::socket& socket) {
 	std::cout << "write_thread started\n";
 
-	std::string text;
+
 	boost::system::error_code error;
+	std::string server_name;
+	std::cout << "enter server name\n";
+	std::cin >> server_name;
+
+
+	boost::asio::write(socket, boost::asio::buffer(server_name), error);
+	if (!error) {
+		std::cout << server_name << "send their name to client" << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
+	std::string text;
 	while (std::getline(std::cin, text) && (text != "cancel")) {
 		text += '\n';
 		boost::asio::write(socket, boost::asio::buffer(text), error);
