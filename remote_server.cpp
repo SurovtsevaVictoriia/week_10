@@ -2,11 +2,11 @@
 #include <string>
 #include <boost/asio.hpp>
 
-void print(std::string text) {
+void print(std::string text, std::string name) {
 	std::cout << "-------------------------------\n" <<
 		"|                              |\n" <<
-		"|   message from client:       |\n" <<
-		"|   " << text << "\n"<<
+		"|   message from " << name << "\n" <<
+		"|   " << text << "\n" <<
 		"|                              |" <<
 		"\n-------------------------------\n";
 
@@ -20,12 +20,26 @@ void print(std::string text) {
 		<< "       ||_ _ _ _ _ _ _  W |\n"
 		<< "       ||                ||\n";
 }
-
 void long_write_data(boost::asio::ip::tcp::socket& socket) {
 	std::cout << "write_thread started\n";
-	
-	std::string text;
+
+
 	boost::system::error_code error;
+	std::string server_name;
+	std::cout << "enter server name\n";
+	std::cin >> server_name;
+
+
+	boost::asio::write(socket, boost::asio::buffer(server_name), error);
+	if (!error) {
+		std::cout << server_name << "send their name to client" << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
+	std::string text;
 	while (std::getline(std::cin, text) && (text != "cancel")) {
 		text += '\n';
 		boost::asio::write(socket, boost::asio::buffer(text), error);
@@ -48,6 +62,20 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 	boost::asio::streambuf buffer;
 	boost::system::error_code error;
 
+	boost::asio::read_until(socket, buffer, '\n', error);
+	std::string client_name;
+
+	if (!error) {
+
+		std::istream input_stream(&buffer);
+		std::getline(input_stream, client_name, '\n');
+		std::cout << "client name is " << client_name << std::endl;
+	}
+	else {
+		std::cout << "send failed: " << error.message() << std::endl;
+		return;
+	}
+
 	while (true) {
 
 		boost::asio::read_until(socket, buffer, '\n', error);
@@ -56,10 +84,10 @@ void long_receive_data(boost::asio::ip::tcp::socket& socket) {
 			std::string message;
 			std::istream input_stream(&buffer);
 			std::getline(input_stream, message, '\n');
-			print(message);
+			print(message, client_name);
 		}
 		else {
-			std::cout << "send failed: " << error.message() << std::endl;
+			std::cout << "receive failed: " << error.message() << std::endl;
 			return;
 		}
 	}
@@ -73,12 +101,12 @@ int main(int argc, char** argv)
 	using namespace boost::asio;
 	//--------------------------------------------------------------------------
 	auto port = 3333;
-	
-	
+
+
 	std::string raw_ip_address = "127.0.0.1";
-	
+
 	boost::system::error_code error_code;
-	ip::address ip_address =ip::address::from_string(raw_ip_address, error_code);
+	ip::address ip_address = ip::address::from_string(raw_ip_address, error_code);
 	ip::tcp::endpoint endpoint_1(boost::asio::ip::tcp::v4(), port);
 	ip::tcp::endpoint endpoint_2(boost::asio::ip::tcp::v4(), 9999);
 	std::cout << "Endpoint ready" << std::endl;
@@ -87,7 +115,7 @@ int main(int argc, char** argv)
 	ip::tcp protocol_ = boost::asio::ip::tcp::v4();
 	//--------------------------------------------------------------------------
 	try
-	{	
+	{
 		//--------------------------------------------------------------------------
 		ip::tcp::acceptor receive_acceptor(io_service_, endpoint_1);
 		ip::tcp::socket recieve_socket(io_service_);
@@ -108,7 +136,7 @@ int main(int argc, char** argv)
 		read_tread.join();
 		write_thread.join();
 
-		
+
 
 	}
 	catch (boost::system::system_error& e)
@@ -116,10 +144,10 @@ int main(int argc, char** argv)
 		std::cout << "Error occured! Error code = " << e.code() << ". Message: " << e.what();
 	}
 
-	
+
 	//--------------------------------------------------------------------------
 
-	
+
 
 	//system("pause");
 
